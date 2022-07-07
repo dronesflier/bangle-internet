@@ -9,21 +9,37 @@
    </style>    
  </head>
  <body>
-  <svg viewBox="0 0 24 24">
-    <path fill="#000000" d="M12,2A7,7 0 0,0 5,9C5,11.38 6.19,13.47 8,14.74V17A1,1 0 0,0 9,18H15A1,1 0 0,0 16,17V14.74C17.81,13.47 19,11.38 19,9A7,7 0 0,0 12,2M9,21A1,1 0 0,0 10,22H14A1,1 0 0,0 15,21V20H9V21Z" />
-  </svg>
+    <svg style="width:24px;height:24px" viewBox="0 0 24 24">
+        <path fill="currentColor" d="M19,10L17,12L19,14L21,12M14.88,16.29L13,18.17V14.41M13,5.83L14.88,7.71L13,9.58M17.71,7.71L12,2H11V9.58L6.41,5L5,6.41L10.59,12L5,17.58L6.41,19L11,14.41V22H12L17.71,16.29L13.41,12M7,12L5,10L3,12L5,14L7,12Z" />
+    </svg>
   <script src="https://www.puck-js.com/puck.js"></script>
   <script type="text/javascript">
     // Get the actual curve inside the SVG. You could make differemt
     // parts of a more complex SVG do different things...
     var path = document.getElementsByTagName('path')[0];
-    // Make sure your mouse cursor turns into a hand when over it, and gray it out
+    // Make sure your mouse cursor turns into a hand when over it, and gray it out  
     path.style="cursor:pointer;fill:#BBB";
 
     // Called when we get a line of data - updates the light color
     function onLine(v) {
-      console.log("Received: "+JSON.stringify(v));
-      path.style.fill="rgb("+Math.round(v*255)+",0,0)";
+
+        if (v.includes('getaddr')) {
+            v = v.split(" ");
+            console.log(v);
+            getPage(v[1]);
+          }
+    }
+
+    async function getPage(url) {
+        let response = await fetch(url, {'mode': 'no-cors'});
+
+        if (response.ok) { // if HTTP-status is 200-299
+        // get the response body (the method explained below)
+            let json = await response.json();
+            console.log(json);
+        } else {
+            alert("HTTP-Error: " + response.status);
+        }
     }
 
     // When clicked, connect or disconnect
@@ -39,8 +55,6 @@
           return;
         }
         connection = c;
-        // Handle the data we get back, and call 'onLine'
-        // whenever we get a line
         var buf = "";
         connection.on("data", function(d) {
           buf += d;
@@ -50,18 +64,9 @@
             buf = buf.substr(i+1);
             i = buf.indexOf("\n");
           }
+          
         });
-        // First, reset Puck.js
-        connection.write("reset();\n", function() {
-          // Wait for it to reset itself
-          setTimeout(function() {
-            // Now tell it to write data on the current light level to Bluetooth
-            // 10 times a second. Also ensure that when disconnected, Puck.js
-            // resets so the setInterval doesn't keep draining battery.
-            connection.write("setInterval(function(){Bluetooth.println(Puck.light());},100);NRF.on('disconnect', function() {reset()});\n",
-              function() { console.log("Ready..."); });
-          }, 1500);
-        });
+        connection.write("Bluetooth.println('getaddr http://juliusschoder.de/');\n", function() {});
       });
     });
   </script>
